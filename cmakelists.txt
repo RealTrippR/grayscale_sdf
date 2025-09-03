@@ -1,0 +1,44 @@
+cmake_minimum_required(VERSION 3.15)
+
+
+project(
+    GRAY_SDF
+    VERSION 1.0
+    LANGUAGES C
+)
+
+set(CMAKE_C_STANDARD 99)
+
+add_library(GRAY_SDF_STATIC STATIC
+    ${PROJECT_SOURCE_DIR}/grayscale_sdf/src/grayscale_sdf.c
+)
+
+target_include_directories(GRAY_SDF_STATIC PUBLIC ${PROJECT_SOURCE_DIR}/grayscale_sdf)
+
+
+# Set warnings to treat as errors
+if (MSVC) 
+    target_compile_options(GRAY_SDF_STATIC PRIVATE
+        /W4               
+        /we4047           # 'different levels of indirection'
+        /we4715           # 'not all control paths return a value'
+        /we4716           # 'must return a value'
+        /we4098           # 'void value not ignored as it ought to be'
+        /we4777           # 'format string mismatch'
+        /we4090           # 'different qualifiers'
+    )
+
+else()
+    target_compile_options(GRAY_SDF_STATIC PRIVATE
+        -Wall
+        -Werror=return-type
+        -Werror=incompatible-pointer-types
+        -Werror=format
+        -Werror=format-security
+        -Werror=discarded-qualifiers
+    )
+endif()
+
+if (CMAKE_BUILD_TYPE STREQUAL "Release")
+    add_compile_options(-O2)
+endif()
