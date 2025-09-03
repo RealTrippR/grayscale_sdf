@@ -96,37 +96,37 @@ static f32 pxlHSPLuminance(const u8* pixel, sdf_format pixelFormat)
         const colorR8* c = (colorR8*)pixel;
         return c->r / 255.f;
     }
-    else if (SDF_FORMAT_R8G8) 
+    else if (pixelFormat==SDF_FORMAT_R8G8)
     {
         const colorR8G8* c = (colorR8G8*)pixel;
         return HSPLuminance(c->r / 255.f, c->g / 255.f, 0);
     }
-    else if (SDF_FORMAT_R8G8B8) 
+    else if (pixelFormat == SDF_FORMAT_R8G8B8)
     {
         const colorR8G8B8* c = (colorR8G8B8*)pixel;
         return HSPLuminance(c->r / 255.f, c->g / 255.f, c->b / 255.f);
     }
-    else if (SDF_FORMAT_R8G8B8A8)
+    else if (pixelFormat == SDF_FORMAT_R8G8B8A8)
     {
         const colorR8G8B8A8* c = (colorR8G8B8A8*)pixel;
         return HSPLuminance(c->r / 255.f, c->g / 255.f, c->b / 255.f) * (c->a / 255.f);
     }
-    else if (SDF_FORMAT_R16) 
+    else if (pixelFormat == SDF_FORMAT_R16)
     {
         const colorR16* c = (colorR16*)pixel;
         return c->r / 65535.f;
     }
-    else if (SDF_FORMAT_R16G16) 
+    else if (pixelFormat == SDF_FORMAT_R16G16)
     {
         const colorR16G16* c = (colorR16G16*)pixel;
         return HSPLuminance(c->r / 65535.f, c->g / 65535.f, 0);
     }
-    else if (SDF_FORMAT_R16G16B16) 
+    else if (pixelFormat == SDF_FORMAT_R16G16B16)
     {
         const colorR16G16B16* c = (colorR16G16B16*)pixel;
         return HSPLuminance(c->r / 65535.f, c->g / 65535.f, c->b / 65535.f);
     }
-    else if (SDF_FORMAT_R16G16B16A16)
+    else if (pixelFormat == SDF_FORMAT_R16G16B16A16)
     {
         const colorR16G16B16A16* c = (colorR16G16B16A16*)pixel;
         return HSPLuminance(c->r / 65535.f, c->g / 65535.f, c->b / 65535.f) * (c->a / 65535.f);
@@ -135,7 +135,6 @@ static f32 pxlHSPLuminance(const u8* pixel, sdf_format pixelFormat)
 
 static bool evaluateThreshold(const u8* pixel, sdf_format pxlFormat, const sdf_threshold* __t__)
 {
-    u32 stride = sizeofFmt(pxlFormat);
     const sdf_thresholdGeneric* t = (sdf_thresholdGeneric*)__t__;
     f32 v;
 
@@ -374,7 +373,7 @@ static void* EDT_pass(void*  args___)
         edt_1d(instance, f, d, a, height);
 
         for (u16 y = 0; y < height; ++y) {
-            float dist = sqrt(d[y]);
+            float dist = sqrtf(d[y]);
 
             if (dist == 0)
                 continue;
@@ -413,13 +412,13 @@ static void* EDT_pass(void*  args___)
             case SDF_FORMAT_R8G8:
                 if (px) {
                     distanceFieldOut[idx * 2] = px ? (i8)(dist / maxScanDist * 127) : (i8)(dist / maxScanDist * 127 + 127);
-                    distanceFieldOut[idx * 2 + 1] = ((dir + 3.141592653589) / 6.28318530718) * 255;
+                    distanceFieldOut[idx * 2 + 1] = (i8)((dir + 3.141592653589) / 6.28318530718) * 255;
                 }
                 break;
             case SDF_FORMAT_R16G16:
                 if (px) {
                     ((i16*)distanceFieldOut)[idx * 2] = px ? (i16)(dist / maxScanDist * 32767) : (i16)(dist / maxScanDist * 32767 + 32767);
-                    ((i16*)distanceFieldOut)[idx * 2 + 1] = ((dir + 3.141592653589) / 6.28318530718) * 65535;
+                    ((i16*)distanceFieldOut)[idx * 2 + 1] = (i16)((dir + 3.141592653589) / 6.28318530718) * 65535;
                 }
                 break;
             }
@@ -460,14 +459,28 @@ SDF_API errno_t sdf_imageToSdf(const sdf_instance* instance, const sdf_imageInfo
     task2.args = &args2;
     task2.func = EDT_pass;
     
+    errno_t retcode=0u;
     void* hdls = instance->malloc(instance->taskHandleSize * 2);
-    instance->launchTask(task, (u8*)hdls);
-    instance->launchTask(task2, (u8*)hdls + instance->taskHandleSize);
+    if (instance->launchTask(task, (u8*)hdls)) {
+        retcode = -1;
+        goto bail;
+    }
+    if (instance->launchTask(task2, (u8*)hdls + instance->taskHandleSize)) {
+        retcode = -1;
+        goto bail;
+    }
+    if (instance->joinTask((u8*)hdls)) {
+        retcode = -1;
+        goto bail;
+    }
+    if (instance->joinTask((u8*)hdls + instance->taskHandleSize)) {
+        retcode = -1;
+        goto bail;
+    }
 
-    instance->joinTask((u8*)hdls);
-    instance->joinTask((u8*)hdls + instance->taskHandleSize);
-
-    instance->free(hdls);
-
-    return 0;
+bail:
+    if (hdls) {
+        instance->free(hdls);
+    }
+    return retcode;
 }
