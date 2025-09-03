@@ -1,0 +1,10 @@
+SFML-3.0.0/
+*.dll
+.dll
+# Visual Studio
+*.ipch
+*.obj
+*.pdb
+*.user
+*.suo
+*.vs/

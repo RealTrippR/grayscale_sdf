@@ -1,0 +1,5 @@
+﻿  grayscale_sdf.c
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\grayscale_sdf\src\grayscale_sdf.c(580,26): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  cthreads.c
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\tests\cthreads.c(140,18): warning C4311: 'type cast': pointer truncation from 'void *' to 'DWORD'
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\tests\cthreads.c(486,3): error C4996: 'strncpy': This function or variable may be unsafe. Consider using strncpy_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.

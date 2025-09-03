@@ -1,0 +1,5 @@
+﻿  grayscale_sdf.c
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\grayscale_sdf\src\grayscale_sdf.c(647,94): warning C4244: '=': conversion from 'double' to 'i8', possible loss of data
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\grayscale_sdf\src\grayscale_sdf.c(652,98): warning C4244: '=': conversion from 'double' to 'i16', possible loss of data
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\grayscale_sdf\src\grayscale_sdf.c(611,26): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+  sfd_test.vcxproj -> C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\x64\Debug\sdf_test.exe

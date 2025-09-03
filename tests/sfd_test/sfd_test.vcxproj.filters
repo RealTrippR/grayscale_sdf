@@ -1,0 +1,41 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="tests">
+      <UniqueIdentifier>{08ed275b-3f0b-41eb-997a-1e7fc33ee4fa}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="grayscale_sdf">
+      <UniqueIdentifier>{a76fa43a-d873-4e29-808c-3ddf9c857cf5}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="grayscale_sdf\src">
+      <UniqueIdentifier>{5158bf57-d255-45b5-9a7b-0422829de9bf}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="tests\test.cpp">
+      <Filter>tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\grayscale_sdf\src\grayscale_sdf.c">
+      <Filter>grayscale_sdf\src</Filter>
+    </ClCompile>
+    <ClCompile Include="tests\cthreads.c">
+      <Filter>tests</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\grayscale_sdf\grayscale_sdf.h">
+      <Filter>grayscale_sdf</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\threadpool.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+    <ClInclude Include="tests\cthreads.h">
+      <Filter>tests</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="tests\threadpool.c.obj">
+      <Filter>tests</Filter>
+    </Object>
+  </ItemGroup>
+</Project>
