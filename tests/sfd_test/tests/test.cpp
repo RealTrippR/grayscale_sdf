@@ -53,11 +53,11 @@ int main(int argc, const char* const*)
 	auto start = std::chrono::high_resolution_clock::now();
 
 	uint32_t distanceFieldSize=0;
-	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, &distanceFieldSize, SDF_FORMAT_R8G8, nullptr))
+	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, &distanceFieldSize, SDF_FORMAT_R8, nullptr))
 		return EXIT_FAILURE;
 
 	int8_t* sdf = (int8_t*)malloc(distanceFieldSize);
-	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, nullptr, SDF_FORMAT_R8G8, sdf))
+	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, nullptr, SDF_FORMAT_R8, sdf))
 		return EXIT_FAILURE;
 
 	auto end = std::chrono::high_resolution_clock::now();
@@ -71,9 +71,11 @@ int main(int argc, const char* const*)
 
 	for (uint32_t y = 0; y < imgInfo.height; ++y) {
 		for (uint32_t x = 0; x < imgInfo.width; ++x) {
-			int8_t v = (int8_t)sdf[((y * imgInfo.width) + x) * 2];
+			const uint8_t stride = 1;
+			int8_t v = (int8_t)sdf[((y * imgInfo.width) + x) * stride];
 			float f = fabsf((float)v / 255);
-			int8_t rad = sdf[((y * imgInfo.width) + x) * 2 + 1];
+			int8_t rad = sdf[((y * imgInfo.width) + x) * stride + 1];
+			rad = 0;
 			sf::Color c;
 			if (v > 0) {
 				c = { 0,(uint8_t)rad,(uint8_t)v,255 };
@@ -84,9 +86,9 @@ int main(int argc, const char* const*)
 			sdfImage.setPixel({ x,y },c);
 		}
 	}
-
-	const float lineLength = 5.0f;      // how long each line should be
-	const int step = 4;                  // sample every 4 pixels for clarity
+	/*
+	const float lineLength = 5.0f;  
+	const int step = 4;                
 	sf::VertexArray lines(sf::PrimitiveType::Lines);
 	for (uint32_t y = 0; y < imgInfo.height; y += step) {
 		for (uint32_t x = 0; x < imgInfo.width; x += step) {
@@ -100,9 +102,7 @@ int main(int argc, const char* const*)
 			lines.append(sf::Vertex(end, sf::Color::Red));
 		}
 	}
-
-	// In the window loop:
-	window.draw(lines);
+	*/
 
 	sf::Texture sdfTexture(sdfImage);
 	sf::Sprite sdfSprite(sdfTexture);

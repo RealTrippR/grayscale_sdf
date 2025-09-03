@@ -352,8 +352,12 @@ static void* EDT_pass(void*  args___)
         for (u16 x = 0; x < width; ++x) {
             f[x] = thresholdMap[y * width + x];
         }
-        edt_1d(instance, f, d, posRows + width * y, width);
-
+        if (posRows) {
+            edt_1d(instance, f, d, posRows + width * y, width);
+        }
+        else {
+            edt_1d(instance, f, d, NULL, width);
+        }
         for (u16 x = 0; x < width; ++x) {
             thresholdMap[y * width + x] = d[x];
         }
@@ -378,7 +382,7 @@ static void* EDT_pass(void*  args___)
             if (dist > maxScanDist) 
                 dist = (float)maxScanDist;
             if (invert)
-                dist = -dist;
+                dist = dist+127;
             const f32 px = thresholdMap[x + y * width];
             size_t idx = y * width + x;
 
@@ -397,21 +401,26 @@ static void* EDT_pass(void*  args___)
 
             switch (distanceFieldFormat) {
             case SDF_FORMAT_R8:
-                distanceFieldOut[idx] = px ? (i8)(dist / maxScanDist * 127) : (i8)(dist / maxScanDist * 127 + 127);
+                if (px) {
+                    distanceFieldOut[idx] = px ? (i8)(dist / maxScanDist * 127) : (i8)(dist / maxScanDist * 127 + 127);
+                }
                 break;
             case SDF_FORMAT_R16:
-                ((i16*)distanceFieldOut)[idx] = px ? (i16)(dist / maxScanDist * 32767) : (i16)(dist / maxScanDist * 32767 + 32767);
+                if (px) {
+                    ((i16*)distanceFieldOut)[idx] = px ? (i16)(dist / maxScanDist * 32767) : (i16)(dist / maxScanDist * 32767 + 32767);
+                }
                 break;
             case SDF_FORMAT_R8G8:
-                distanceFieldOut[idx * 2] = px ? (i8)(dist / maxScanDist * 127) : (i8)(dist / maxScanDist * 127 + 127);
-
                 if (px) {
+                    distanceFieldOut[idx * 2] = px ? (i8)(dist / maxScanDist * 127) : (i8)(dist / maxScanDist * 127 + 127);
                     distanceFieldOut[idx * 2 + 1] = ((dir + 3.141592653589) / 6.28318530718) * 255;
                 }
                 break;
             case SDF_FORMAT_R16G16:
-                ((i16*)distanceFieldOut)[idx * 2] = px ? (i16)(dist / maxScanDist * 32767) : (i16)(dist / maxScanDist * 32767 + 32767);
-                ((i16*)distanceFieldOut)[idx * 2 + 1] = ((dir + 3.141592653589) / 6.28318530718) * 65535;
+                if (px) {
+                    ((i16*)distanceFieldOut)[idx * 2] = px ? (i16)(dist / maxScanDist * 32767) : (i16)(dist / maxScanDist * 32767 + 32767);
+                    ((i16*)distanceFieldOut)[idx * 2 + 1] = ((dir + 3.141592653589) / 6.28318530718) * 65535;
+                }
                 break;
             }
         }
