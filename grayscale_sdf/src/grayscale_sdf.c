@@ -381,7 +381,7 @@ static void* EDT_pass(void*  args___)
             if (dist > maxScanDist) 
                 dist = (float)maxScanDist;
             if (invert)
-                dist = dist-127;
+                dist = -dist;
             const f32 px = thresholdMap[x + y * width];
             size_t idx = y * width + x;
 
@@ -445,9 +445,11 @@ SDF_API errno_t sdf_imageToSdf(const sdf_instance* instance, const sdf_imageInfo
     }
 
     u8 fieldStride = sizeofFmt(distanceFieldFormat);
-    if (!distanceFieldOut) {
+    if (distanceFieldSizeOut) {
         *distanceFieldSizeOut = imageInfo->width * imageInfo->height * fieldStride;
-        return 0;
+        if (!distanceFieldOut) {
+            return 0;
+        }
     }
 
     EDT_pass_Args args = { false,instance, imageInfo, maxScanDist, thresholds, thresholdCount, distanceFieldFormat, distanceFieldOut };

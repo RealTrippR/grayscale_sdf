@@ -41,7 +41,7 @@ int main(int argc, const char* const*)
 	instance.taskHandleSize = sizeof(ThreadPoolTaskHandle);
 
 	sdf_threshold threshold;
-	threshold.range = { .type = SDF_RANGE, .channel = SDF_CHANNEL_A, .lowerBound = 0.5f, .upperBound = 1.0f };
+	threshold.range = { .type = SDF_RANGE, .channel = SDF_CHANNEL_A, .lowerBound = 0.5f, .upperBound = 1.f };
 
 	sdf_imageInfo imgInfo = {
 		.pixels = image.getPixelsPtr(),
@@ -53,11 +53,11 @@ int main(int argc, const char* const*)
 	auto start = std::chrono::high_resolution_clock::now();
 
 	uint32_t distanceFieldSize=0;
-	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, &distanceFieldSize, SDF_FORMAT_R8, nullptr))
+	if (sdf_imageToSdf(&instance, &imgInfo, 45, &threshold, 1, &distanceFieldSize, SDF_FORMAT_R8, nullptr))
 		return EXIT_FAILURE;
 
 	int8_t* sdf = (int8_t*)malloc(distanceFieldSize);
-	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, nullptr, SDF_FORMAT_R8, (int8_t*)sdf))
+	if (sdf_imageToSdf(&instance, &imgInfo, 45, &threshold, 1, nullptr, SDF_FORMAT_R8, (int8_t*)sdf))
 		return EXIT_FAILURE;
 
 	auto end = std::chrono::high_resolution_clock::now();
@@ -81,7 +81,7 @@ int main(int argc, const char* const*)
 				c = { 0,(uint8_t)rad,(uint8_t)v,255 };
 			}
 			else {
-				c = { (uint8_t)(v-127),(uint8_t)rad,0,255 };
+				c = { (uint8_t)(-v),(uint8_t)rad,0,255 };
 			}
 			//c = { 0,(uint8_t)rad,(uint8_t)v,255 };
 			sdfImage.setPixel({ x,y },c);
