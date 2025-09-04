@@ -381,7 +381,7 @@ static void* EDT_pass(void*  args___)
             if (dist > maxScanDist) 
                 dist = (float)maxScanDist;
             if (invert)
-                dist = dist+127;
+                dist = dist-127;
             const f32 px = thresholdMap[x + y * width];
             size_t idx = y * width + x;
 

@@ -56,8 +56,8 @@ int main(int argc, const char* const*)
 	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, &distanceFieldSize, SDF_FORMAT_R8, nullptr))
 		return EXIT_FAILURE;
 
-	uint8_t* sdf = (uint8_t*)malloc(distanceFieldSize);
-	if (sdf_imageToUdf(&instance, &imgInfo, 25, &threshold, 1, nullptr, SDF_FORMAT_R8, sdf))
+	int8_t* sdf = (int8_t*)malloc(distanceFieldSize);
+	if (sdf_imageToSdf(&instance, &imgInfo, 25, &threshold, 1, nullptr, SDF_FORMAT_R8, (int8_t*)sdf))
 		return EXIT_FAILURE;
 
 	auto end = std::chrono::high_resolution_clock::now();
@@ -73,17 +73,17 @@ int main(int argc, const char* const*)
 		for (uint32_t x = 0; x < imgInfo.width; ++x) {
 			const uint8_t stride = 1;
 			int8_t v = (int8_t)sdf[((y * imgInfo.width) + x) * stride];
-			float f = fabsf((float)v / 255);
+			float f = fabsf((float)v / 127);
 			int8_t rad = sdf[((y * imgInfo.width) + x) * stride + 1];
 			rad = 0;
 			sf::Color c;
-			/*if (v > 0) {
+			if (v > 0) {
 				c = { 0,(uint8_t)rad,(uint8_t)v,255 };
 			}
 			else {
 				c = { (uint8_t)(v-127),(uint8_t)rad,0,255 };
-			}*/
-			c = { 0,(uint8_t)rad,(uint8_t)v,255 };
+			}
+			//c = { 0,(uint8_t)rad,(uint8_t)v,255 };
 			sdfImage.setPixel({ x,y },c);
 		}
 	}
