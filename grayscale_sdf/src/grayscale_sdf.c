@@ -401,24 +401,24 @@ static void* EDT_pass(void*  args___)
             switch (distanceFieldFormat) {
             case SDF_FORMAT_R8:
                 if (px) {
-                    distanceFieldOut[idx] = px ? (i8)(dist / maxScanDist * 127) : (i8)(dist / maxScanDist * 127 + 127);
+                    distanceFieldOut[idx] = (i8)(dist / maxScanDist * 127);
                 }
                 break;
             case SDF_FORMAT_R16:
                 if (px) {
-                    ((i16*)distanceFieldOut)[idx] = px ? (i16)(dist / maxScanDist * 32767) : (i16)(dist / maxScanDist * 32767 + 32767);
+                    ((i16*)distanceFieldOut)[idx] = (i16)(dist / maxScanDist * 32767);
                 }
                 break;
             case SDF_FORMAT_R8G8:
                 if (px) {
-                    distanceFieldOut[idx * 2] = px ? (i8)(dist / maxScanDist * 127) : (i8)(dist / maxScanDist * 127 + 127);
+                    distanceFieldOut[idx * 2] = (i8)(dist / maxScanDist * 127);
                     distanceFieldOut[idx * 2 + 1] = (i8)((dir + 3.141592653589) / 6.28318530718) * 255;
                 }
                 break;
             case SDF_FORMAT_R16G16:
                 if (px) {
-                    ((i16*)distanceFieldOut)[idx * 2] = px ? (i16)(dist / maxScanDist * 32767) : (i16)(dist / maxScanDist * 32767 + 32767);
-                    ((i16*)distanceFieldOut)[idx * 2 + 1] = (i16)((dir + 3.141592653589) / 6.28318530718) * 65535;
+                    ((i16*)distanceFieldOut)[idx * 2] = (i16)(dist / maxScanDist * 32767);
+                    ((u16*)distanceFieldOut)[idx * 2 + 1] = (u16)((dir + 3.141592653589) / 6.28318530718) * 65535;
                 }
                 break;
             }
@@ -435,7 +435,7 @@ static void* EDT_pass(void*  args___)
     return NULL;
 }
 
-SDF_API errno_t sdf_imageToSdf(const sdf_instance* instance, const sdf_imageInfo* imageInfo, u16 maxScanDist, const sdf_threshold* thresholds, u16 thresholdCount, u32* distanceFieldSizeOut, sdf_format distanceFieldFormat, i8* distanceFieldOut)
+SDF_API errno_t sdf_imageToSdf(const sdf_instance* instance, const sdf_imageInfo* imageInfo, u16 maxScanDist, const sdf_threshold* thresholds, u16 thresholdCount, u32* distanceFieldSizeOut, sdf_format distanceFieldFormat, i8* distanceFieldOut, bool _unsigned)
 {
     if (instance->threadCount > MAX_TASK_HANDLE_COUNT)
         return -4;
@@ -460,6 +460,211 @@ SDF_API errno_t sdf_imageToSdf(const sdf_instance* instance, const sdf_imageInfo
     task2.func = EDT_pass;
     
     errno_t retcode=0u;
+    void* hdls = instance->malloc(instance->taskHandleSize * 2);
+    if (instance->launchTask(task, (u8*)hdls)) {
+        retcode = -1;
+        goto bail;
+    }
+    if (instance->launchTask(task2, (u8*)hdls + instance->taskHandleSize)) {
+        retcode = -1;
+        goto bail;
+    }
+    if (instance->joinTask((u8*)hdls)) {
+        retcode = -1;
+        goto bail;
+    }
+    if (instance->joinTask((u8*)hdls + instance->taskHandleSize)) {
+        retcode = -1;
+        goto bail;
+    }
+
+bail:
+    if (hdls) {
+        instance->free(hdls);
+    }
+    return retcode;
+}
+
+
+
+
+
+typedef struct {
+    bool invert;
+    const sdf_instance* instance;
+    const sdf_imageInfo* imageInfo;
+    u16 maxScanDist;
+    const sdf_threshold* thresholds;
+    u16 thresholdCount;
+    sdf_format distanceFieldFormat;
+    u8* distanceFieldOut;
+} EDT_passUnsigned_Args;
+
+static void* EDT_passUnsigned(void* args___)
+{
+    EDT_passUnsigned_Args* args = args___;
+    bool invert = args->invert;
+    const sdf_instance* instance = args->instance;
+    const sdf_imageInfo* imageInfo = args->imageInfo;
+    u16 maxScanDist = args->maxScanDist;
+    const sdf_threshold* thresholds = args->thresholds;
+    u16 thresholdCount = args->thresholdCount;
+    sdf_format distanceFieldFormat = args->distanceFieldFormat;
+    u8* distanceFieldOut = args->distanceFieldOut;
+    const u16 width = imageInfo->width;
+    const u16 height = imageInfo->height;
+
+    f32* thresholdMap = instance->malloc(sizeof(thresholdMap[0]) * width * height);
+    memset(thresholdMap, 0, sizeof(thresholdMap[0]) * width * height);
+    u32 stride = sizeofFmt(imageInfo->format);
+    for (u32 y = 0; y < height; ++y)
+    {
+        for (u32 x = 0; x < width; ++x)
+        {
+            const u8* pixel = imageInfo->pixels + (x + (width * y)) * stride;
+            if (evaluateThresholds(pixel, imageInfo->format, thresholds, thresholdCount)) {
+                if (!invert) {
+                    thresholdMap[x + (width * y)] = 0;
+                }
+                else {
+                    thresholdMap[x + (width * y)] = INFINITY;
+                }
+            }
+            else {
+                if (!invert) {
+                    thresholdMap[x + (width * y)] = INFINITY;
+                }
+                else {
+                    thresholdMap[x + (width * y)] = 0;
+                }
+            }
+        }
+    }
+
+    // feature
+    f32* f = instance->malloc(sizeof(f32) * (width > height ? width : height));
+    // distance
+    f32* d = instance->malloc(sizeof(f32) * (width > height ? width : height));
+    u32* a = instance->malloc(sizeof(a[0]) * (width > height ? width : height));
+    u32* posRows = NULL;
+    if (distanceFieldFormat == SDF_FORMAT_R16G16 || distanceFieldFormat == SDF_FORMAT_R8G8) {
+        posRows = instance->malloc(sizeof(posRows[0]) * width * height);
+    }
+
+
+    // Row-wise 1D EDT
+    for (u16 y = 0; y < height; ++y) {
+        for (u16 x = 0; x < width; ++x) {
+            f[x] = thresholdMap[y * width + x];
+        }
+        if (posRows) {
+            edt_1d(instance, f, d, posRows + width * y, width);
+        }
+        else {
+            edt_1d(instance, f, d, NULL, width);
+        }
+        for (u16 x = 0; x < width; ++x) {
+            thresholdMap[y * width + x] = d[x];
+        }
+    }
+
+    // Column-wise 1D EDT (final distances)
+    for (u16 x = 0; x < width; ++x)
+    {
+        for (u16 y = 0; y < height; ++y)
+        {
+            f[y] = thresholdMap[y * width + x];
+        }
+
+        edt_1d(instance, f, d, a, height);
+
+        for (u16 y = 0; y < height; ++y) {
+            float dist = sqrtf(d[y]);
+
+            if (dist == 0)
+                continue;
+            // Clamp to maxScanDist
+            if (dist > maxScanDist)
+                dist = (float)maxScanDist;
+
+            const f32 px = thresholdMap[x + y * width];
+            size_t idx = y * width + x;
+
+            f32 dir = 0;
+
+            if (posRows) {
+                u32 fy = a[y];
+                u32 fx = posRows[fy * width + x];
+                f32 dx = (f32)x - fx;
+                f32 dy = (f32)y - fy;
+                dir = atan2f(dy, dx);
+            }
+
+
+
+
+            switch (distanceFieldFormat) {
+            case SDF_FORMAT_R8:
+                if (px) {
+                    distanceFieldOut[idx] = (u8)(dist / maxScanDist * 255);
+                }
+                break;
+            case SDF_FORMAT_R16:
+                if (px) {
+                    ((i16*)distanceFieldOut)[idx] = (u16)(dist / maxScanDist * 65535);
+                }
+                break;
+            case SDF_FORMAT_R8G8:
+                if (px) {
+                    distanceFieldOut[idx * 2] = (u8)(dist / maxScanDist * 255);
+                    distanceFieldOut[idx * 2 + 1] = (i8)((dir + 3.141592653589) / 6.28318530718) * 255;
+                }
+                break;
+            case SDF_FORMAT_R16G16:
+                if (px) {
+                    ((i16*)distanceFieldOut)[idx * 2] = (u16)(dist / maxScanDist * 65535);
+                    ((i16*)distanceFieldOut)[idx * 2 + 1] = (u16)((dir + 3.141592653589) / 6.28318530718) * 65535;
+                }
+                break;
+            }
+        }
+    }
+    instance->free(thresholdMap);
+    if (posRows)
+        instance->free(posRows);
+
+    instance->free(f);
+    instance->free(d);
+    instance->free(a);
+
+    return NULL;
+}
+
+SDF_API errno_t sdf_imageToUdf(const sdf_instance* instance, const sdf_imageInfo* imageInfo, uint16_t maxScanDist, const sdf_threshold* thresholds, uint16_t thresholdCount, uint32_t* distanceFieldSizeOut, sdf_format distanceFieldFormat, uint8_t* distanceFieldOut) 
+{
+    if (instance->threadCount > MAX_TASK_HANDLE_COUNT)
+        return -4;
+
+    if (!(distanceFieldFormat == SDF_FORMAT_R8 || distanceFieldFormat == SDF_FORMAT_R16 || distanceFieldFormat == SDF_FORMAT_R8G8 || distanceFieldFormat == SDF_FORMAT_R16G16)) {
+        return -3;
+    }
+
+    u8 fieldStride = sizeofFmt(distanceFieldFormat);
+    if (!distanceFieldOut) {
+        *distanceFieldSizeOut = imageInfo->width * imageInfo->height * fieldStride;
+        return 0;
+    }
+
+    EDT_passUnsigned_Args args = { false, instance, imageInfo, maxScanDist, thresholds, thresholdCount, distanceFieldFormat, distanceFieldOut };
+    EDT_passUnsigned_Args args2 = { true, instance, imageInfo, maxScanDist, thresholds, thresholdCount, distanceFieldFormat, distanceFieldOut };
+    sdf_task task;
+    task.args = &args;
+    task.func = EDT_passUnsigned;
+    sdf_task task2;
+    task2.args = &args2;
+    task2.func = EDT_passUnsigned;
+
+    errno_t retcode = 0u;
     void* hdls = instance->malloc(instance->taskHandleSize * 2);
     if (instance->launchTask(task, (u8*)hdls)) {
         retcode = -1;

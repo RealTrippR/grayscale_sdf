@@ -1,5 +1,14 @@
-﻿  grayscale_sdf.c
-C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\grayscale_sdf\src\grayscale_sdf.c(416,94): warning C4244: '=': conversion from 'double' to 'i8', possible loss of data
-C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\grayscale_sdf\src\grayscale_sdf.c(422,102): warning C4244: '=': conversion from 'double' to 'i16', possible loss of data
-C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\grayscale_sdf\src\grayscale_sdf.c(377,26): warning C4244: 'initializing': conversion from 'double' to 'float', possible loss of data
+﻿  test.cpp
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\SFML-3.0.0\include\SFML\System\Exception.hpp(41,47): warning C4275: non dll-interface class 'std::runtime_error' used as base for dll-interface class 'sf::Exception'
+  (compiling source file 'tests/test.cpp')
+      C:\Program Files\Microsoft Visual Studio\2022\Community\VC\Tools\MSVC\14.44.35207\include\stdexcept(100,30):
+      see declaration of 'std::runtime_error'
+      C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\SFML-3.0.0\include\SFML\System\Exception.hpp(41,23):
+      see declaration of 'sf::Exception'
+  
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\tests\test.cpp(64,19): warning C4244: 'initializing': conversion from '_Rep' to 'float', possible loss of data
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\tests\test.cpp(64,19): warning C4244:         with
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\tests\test.cpp(64,19): warning C4244:         [
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\tests\test.cpp(64,19): warning C4244:             _Rep=__int64
+C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\tests\test.cpp(64,19): warning C4244:         ]
   sfd_test.vcxproj -> C:\Users\TrippR\OneDrive\Documents\REPOS\grayscale_sdf\tests\sfd_test\x64\Debug\sdf_test.exe

@@ -3,6 +3,7 @@
 
 #include <errno.h>
 #include <stdint.h>
+#include <stdbool.h>
 
 #ifdef __cplusplus
 #define SDF_API extern "C"
@@ -102,5 +103,8 @@ typedef struct {
 @return errno_t - returns 0 upon success, non-zero in the event of a failure.
 returns 0 upon success, non-zero upon failure */
 SDF_API errno_t sdf_imageToSdf(const sdf_instance* instance, const sdf_imageInfo* imageInfo, uint16_t maxScanDist, const sdf_threshold* thresholds, uint16_t thresholdCount, uint32_t* distanceFieldSizeOut, sdf_format distanceFieldFormat, int8_t* distanceFieldOut);
+
+SDF_API errno_t sdf_imageToUdf(const sdf_instance* instance, const sdf_imageInfo* imageInfo, uint16_t maxScanDist, const sdf_threshold* thresholds, uint16_t thresholdCount, uint32_t* distanceFieldSizeOut, sdf_format distanceFieldFormat, uint8_t* distanceFieldOut);
+
 
 #endif
