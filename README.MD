@@ -9,3 +9,8 @@
 <ins> **Example** </ins>
 
 <ins> **Naming Conventions** </ins>
+- Preprocessor Macros: UPPER_SNAKE_CASE
+- Function Names: CamelCase
+- Variable names: pascalCase
+- Enum Types: CamelCase
+- Enum Values: UPPER_SNAKE_CASE
